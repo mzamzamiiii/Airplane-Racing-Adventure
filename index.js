@@ -8,7 +8,7 @@ const settings = {
     taskGroupId: 224,
     depositGroupId: 224 ,
     minuteInterval: 303 * 1000,
-    boxInterval: 3 * 60 * 1000
+    boxInterval: 30 * 60 * 1000
 };
 
 const MY_INFO = {
