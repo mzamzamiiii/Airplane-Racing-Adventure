@@ -5,7 +5,7 @@ const { WOLF } = wolfjs;
 const settings = {
     identity: process.env.U_MAIL || 'your_email@example.com',
     secret: process.env.U_PASS || 'your_password',
-    taskGroupId: 74000 ,  // الروم اللي يلعب فيه مهام 
+    taskGroupId: 224 ,  // الروم اللي يلعب فيه مهام 
     depositGroupId: 224 , // الروم اللي يودع فيه 
     minuteInterval: 63 * 1000, //اذا عندك زمني 63 واذا ما عندك 306
     boxInterval: 30 * 60 * 1000  // يفتح الصناديق كل 3 دقايق 
