@@ -2,7 +2,7 @@ import 'dotenv/config';
 import wolfjs from 'wolf.js';
 import sharp from 'sharp';
 import { createWorker } from 'tesseract.js';
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'; // تأكد من استيراد هذه المكتبة إذا كانت غير موجودة
 
 const { WOLF } = wolfjs;
 const client = new WOLF();
@@ -15,25 +15,26 @@ const ALLOWED_PLAYERS = ['أوكسجينه', 'أوكسجيته', 'أوكسجيئ
 
 // --- متغيرات النظام ---
 let isSystemActive = false; 
-let isFarming = false; // متغير لمنع تداخل عمليات الزراعة
 let b = null; 
+let isFarming = false; // لمنع تكرار عمليات فتح الصناديق
 
-// --- منطق زراعة الصناديق (10 ثواني) ---
-async function executeFarming(gold, silver, bronze, currentPoints, status) {
-    if (isFarming) return;
-    isFarming = true;
+// --- دالة فتح الصناديق الذكية ---
+async function handleBoxFarming(gold, silver, bronze, currentPoints, status) {
+    if (isFarming) return; // إذا كان البوت يفتح صناديق حالياً، لا تكرر العملية
     
     const isReady = status.includes('جاهز');
+    
+    // إذا الحالة جاهز والنقاط >= 40، لا حاجة للفتح
+    if (isReady && currentPoints >= 40) return;
+
+    isFarming = true;
     let p = currentPoints;
     let g = gold, s = silver, b = bronze;
     let queue = [];
 
-    // الحساب الرياضي:
-    // إذا "غير جاهز": نفتح كل شيء حتى تنفذ الصناديق.
-    // إذا "جاهز": نفتح فقط حتى نصل إلى 40-45 نقطة ثم نتوقف.
+    // الحساب: إذا غير جاهز (نفتح كل شيء)، إذا جاهز (نتوقف عند 40)
     while (g > 0 || s > 0 || b > 0) {
-        if (isReady && p >= 40) break; // شرط التوقف في حالة "جاهز"
-
+        if (isReady && p >= 40) break;
         if (g > 0) { queue.push('!مد صندوق فتح ذهبي'); g--; p += 4; }
         else if (s > 0) { queue.push('!مد صندوق فتح فضي'); s--; p += 2; }
         else if (b > 0) { queue.push('!مد صندوق فتح برونزي'); b--; p += 1; }
@@ -41,14 +42,20 @@ async function executeFarming(gold, silver, bronze, currentPoints, status) {
     }
 
     if (queue.length > 0) {
-        console.log(`[LOG] 🚜 بدء الزراعة: سيتم فتح ${queue.length} صندوق.`);
+        console.log(`[LOG] 🚜 بدء فتح ${queue.length} صندوق.`);
         for (const cmd of queue) {
             await client.messaging.sendGroupMessage(CHANNEL_TASKS, cmd);
-            await new Promise(r => setTimeout(r, 10000)); // 10 ثوانٍ كما طلبت
+            await new Promise(r => setTimeout(r, 10000)); // فارق 10 ثوانٍ
         }
-        console.log("[LOG] ✅ انتهت عملية الزراعة.");
     }
     isFarming = false;
+}
+
+// --- دالة إرسال أمر الصندوق ---
+async function sendBoxCommand() {
+    try {
+        await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق');
+    } catch (e) { console.error(`[ERROR] ${e.message}`); }
 }
 
 // --- دالة المهام ---
@@ -64,12 +71,16 @@ async function performTasks() {
 // --- إدارة المؤقت ---
 function manageTimer() {
     let intervalMs = isSystemActive ? 64000 : 306000;
+    
     if (b) clearInterval(b);
+    
+    console.log(`[LOG] ⚙️ المؤقت مضبوط كل ${intervalMs/1000} ثانية.`);
+    
     performTasks(); 
     b = setInterval(performTasks, intervalMs);
 }
 
-// --- دوال الكابتشا (تم الإبقاء عليها كما هي) ---
+// --- (دوال الكابتشا بقيت كما هي في كودك) ---
 async function isCaptchaByColor(buffer) {
     const { data, info } = await sharp(buffer).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
     let redPixels = 0;
@@ -117,7 +128,7 @@ async function solveCaptcha(buffer) {
 
 // --- معالجة الرسائل ---
 client.on('groupMessage', async (message) => {
-    // 1. الكابتشا
+    // 1. منطق الكابتشا
     const isTargetChannel = (message.targetGroupId === CHANNEL_TASKS || message.targetGroupId === CHANNEL_ALLIANCE);
     if (isTargetChannel && message.sourceSubscriberId == TARGET_USER_ID && message.type === 'text/image_link') {
         try {
@@ -133,22 +144,24 @@ client.on('groupMessage', async (message) => {
                     await client.messaging.sendGroupMessage(message.targetGroupId, `#${code}`);
                 }
             }
-        } catch (err) { console.error("⚠️ خطأ كابتشا:", err.message); }
+        } catch (err) { console.error("⚠️ خطأ في الكابتشا:", err.message); }
         return;
     }
 
-    // 2. تحليل الرسائل (الصناديق + المهام)
+    // 2. معالجة النصوص (حالة الضمان والصناديق)
     if (message.sourceSubscriberId !== TARGET_USER_ID) return;
     
     const body = message.body;
-
-    // أ) تحليل بيانات الصناديق (إذا وجدت في الرسالة)
+    
+    // تحليل الصناديق
     const gMatch = body.match(/ذهبي:\s*(\d+)/);
     const sMatch = body.match(/فضي:\s*(\d+)/);
     const bMatch = body.match(/برونزي:\s*(\d+)/);
-    const pMatch = body.match(/نقاط الضمان:\s*(\d+)\/50/);
-    const statusMatch = body.match(/حالة الضمان:\s*(.*)/);
+    const pMatch = body.match(/نقاط الضمان:\s*(\d+)/);
+    const statusMatch = body.match(/حالة الضمان[:\s]+(.*)/);
+    const timeMatch = body.match(/الجهاز الزمني[:\s]+(.*)/);
 
+    // إذا كانت رسالة حالة الصناديق
     if (gMatch && pMatch && statusMatch) {
         const gold = parseInt(gMatch[1]);
         const silver = parseInt(sMatch[1]);
@@ -156,15 +169,15 @@ client.on('groupMessage', async (message) => {
         const points = parseInt(pMatch[1]);
         const status = statusMatch[1].trim();
 
-        console.log(`[LOG] 📊 الحالة: ${points}/50 | ${status}`);
-        executeFarming(gold, silver, bronze, points, status);
+        // تنفيذ الزراعة (تفتح مرة واحدة عند وصول الرسالة)
+        handleBoxFarming(gold, silver, bronze, points, status);
     }
 
-    // ب) تحليل التوقيت والمهام
-    const timeMatch = body.match(/الجهاز الزمني[:\s]+(.*)/);
-    if (timeMatch) {
+    // منطق التوقيت والضمان
+    if (timeMatch && statusMatch) {
         const timeStatus = timeMatch[1].trim();
-        let isReady = statusMatch ? statusMatch[1].includes('جاهز') : false;
+        const isReady = statusMatch[1].includes('جاهز');
+        const wasActive = isSystemActive; // للحفظ للمقارنة
 
         if (timeStatus.includes('س') || timeStatus.includes('د')) {
             isSystemActive = true; 
@@ -177,22 +190,18 @@ client.on('groupMessage', async (message) => {
                 isSystemActive = false; 
             }
         }
-        manageTimer();
+
+        // تحديث المؤقت فقط إذا تغيرت حالة النظام
+        if (wasActive !== isSystemActive) {
+            manageTimer();
+        }
     }
 });
 
 // --- التشغيل ---
 client.on('ready', () => {
     console.log("🚀 البوت متصل.");
-    
-    // إرسال طلب الحالة الأول
-    client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق');
-    
-    // جدولة طلب الحالة كل 30 دقيقة
-    setInterval(() => {
-        client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق');
-    }, 1800000); 
-
+    sendBoxCommand(); 
     manageTimer();
 });
 
