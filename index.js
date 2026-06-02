@@ -7,63 +7,117 @@ import fetch from 'node-fetch';
 const { WOLF } = wolfjs;
 const client = new WOLF();
 
-// --- 1. الإعدادات ---
-const TARGET_USER_ID = 80055399 ;
+// --- الإعدادات ---
+const TARGET_USER_ID = 80055399;
 const CHANNEL_TASKS = 81889058;
 const CHANNEL_ALLIANCE = 81889058;
 const ALLOWED_PLAYER_NAMES = ['.أوكسجينه.', 'أوكسجيئه.', 'أوكسجيته '];
 
-// --- 2. متغيرات النظام ---
-let currentInterval = 306000; // الافتراضي 5 دقائق
+// --- متغيرات النظام ---
+let currentInterval = 306000; 
 let intervalRef = null;
 let isFarming = false;
 
-// --- 3. دالة المهام الرئيسية ---
+// --- دالة المهام ---
 async function performTasks() {
+    console.log(`[LOG] 🚀 بدء المهام الدورية (مد مهام + ايداع)...`);
     try {
-        console.log(`[LOG] 🚀 تنفيذ المهام...`);
         await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد مهام');
         await new Promise(r => setTimeout(r, 2000));
         await client.messaging.sendGroupMessage(CHANNEL_ALLIANCE, '!مد تحالف ايداع كل');
-    } catch (e) { console.error(`[ERROR] ${e.message}`); }
+        console.log(`[LOG] ✅ المهام الدورية تم إرسالها بنجاح.`);
+    } catch (e) { console.error(`[ERROR] فشل في المهام الدورية: ${e.message}`); }
 }
 
-// --- 4. منطق المؤقت الذكي (القفل) ---
+// --- منطق المؤقت ---
 async function updateBotLogic(isTimeMachineActive, isGuaranteeReady) {
-    let targetInterval = 306000; // الافتراضي 5 دقايق
+    let targetInterval = 306000; 
 
-    // تحديد التوقيت المطلوب بناءً على حالة الجهاز والضمان
     if (isTimeMachineActive) {
-        targetInterval = 64000; // الجهاز نشط -> كل دقيقة
+        targetInterval = 64000;
+        console.log(`[LOG] الحالة: الجهاز نشط. التوقيت: 64 ثانية.`);
     } else if (isGuaranteeReady) {
+        console.log(`[LOG] الحالة: غير نشط ولكن الضمان جاهز. جارٍ طلب صندوق ضمان وقت...`);
         await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق ضمان وقت');
-        targetInterval = 64000; // ضمان جاهز -> كل دقيقة
+        targetInterval = 64000;
     } else {
-        targetInterval = 306000; // لا شيء -> كل 5 دقايق
+        targetInterval = 306000;
+        console.log(`[LOG] الحالة: الجهاز غير نشط والضمان غير جاهز. التوقيت: 5 دقائق.`);
     }
 
-    // [القفل الذكي]: التغيير يحدث فقط إذا كان التوقيت الجديد مختلفاً عن الحالي
     if (targetInterval !== currentInterval) {
-        console.log(`[LOG] ⚙️ تغيير التوقيت إلى ${targetInterval/1000} ثانية.`);
+        console.log(`[LOG] ⚙️ تغيير المؤقت من ${currentInterval/1000}ث إلى ${targetInterval/1000}ث.`);
         currentInterval = targetInterval;
-        
         if (intervalRef) clearInterval(intervalRef);
-        performTasks(); // تنفيذ فوري
+        performTasks();
         intervalRef = setInterval(performTasks, currentInterval);
     }
 }
 
-// --- 5. دوال الكابتشا ---
-async function isCaptchaByColor(buffer) {
-    const { data, info } = await sharp(buffer).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
-    let redPixels = 0;
-    const totalPixels = info.width * info.height;
-    for (let i = 0; i < data.length; i += 4) {
-        if (data[i] > 120 && data[i] > (data[i + 1] + 30) && data[i] > (data[i + 2] + 30)) redPixels++;
-    }
-    return (redPixels / totalPixels) * 100 > 40;
+// --- دوال الكابتشا (مع لوجات) ---
+async function solveCaptcha(buffer) {
+    console.log(`[LOG] 🖼️ جاري تحليل الكابتشا...`);
+    const worker = await createWorker('eng+ara');
+    await worker.setParameters({ tessedit_pageseg_mode: '7' });
+    const { data: { text } } = await worker.recognize(buffer);
+    await worker.terminate();
+    const code = text.replace(/[^a-zA-Z0-9\u0621-\u064A]/g, '').trim();
+    console.log(`[LOG] 🧩 الكابتشا المقروءة: "${code}"`);
+    return code;
 }
 
+// --- المعالجة الرئيسية ---
+client.on('groupMessage', async (message) => {
+    if (message.sourceSubscriberId != TARGET_USER_ID) return;
+
+    // 1. الكابتشا
+    if (message.type === 'text/image_link') {
+        console.log(`[LOG] 📸 استلام صورة (احتمال كابتشا)...`);
+        const response = await fetch(message.body);
+        const buffer = Buffer.from(await response.arrayBuffer());
+        
+        // فحص اللون والاسم
+        const name = await extractPlayerName(buffer);
+        console.log(`[LOG] 👤 اسم اللاعب الموجود بالكابتشا: ${name}`);
+        
+        if (ALLOWED_PLAYER_NAMES.some(n => name.toLowerCase().includes(n.toLowerCase()))) {
+            console.log(`[LOG] ✅ الاسم مطابق، جاري حل الكابتشا...`);
+            const code = await solveCaptcha(buffer);
+            if (code) await client.messaging.sendGroupMessage(message.targetGroupId, `#${code}`);
+        } else {
+            console.log(`[LOG] ❌ الاسم غير مطابق أو لم يتم التعرف عليه، تجاهل.`);
+        }
+        return;
+    }
+
+    // 2. معالجة الرسائل النصية (الحالة والصناديق)
+    const body = message.body;
+    
+    // تحليل الجهاز والضمان
+    const isTimeMachineActive = !body.includes('الجهاز الزمني: غير نشط');
+    const isGuaranteeReady = body.includes('حالة الضمان: جاهز');
+    await updateBotLogic(isTimeMachineActive, isGuaranteeReady);
+
+    // تحليل الصناديق
+    if (body.includes('حالة الصناديق')) {
+        const pMatch = body.match(/نقاط الضمان:\s*(\d+)/);
+        if (pMatch) {
+            const points = parseInt(pMatch[1]);
+            console.log(`[LOG] 📦 نقاط الضمان الحالية: ${points}`);
+            
+            if (points < 40 && !isFarming) {
+                console.log(`[LOG] ⚠️ النقاط أقل من 40، جاري فتح صندوق ذهبي...`);
+                isFarming = true;
+                await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق فتح ذهبي');
+                setTimeout(() => { isFarming = false; }, 8000);
+            } else if (points >= 40) {
+                console.log(`[LOG] ✅ النقاط ${points} (كافية)، لا حاجة لفتح صناديق.`);
+            }
+        }
+    }
+});
+
+// --- دوال مساعدة إضافية ---
 async function extractPlayerName(buffer) {
     try {
         const processedBuffer = await sharp(buffer).greyscale().threshold(160).toBuffer();
@@ -71,80 +125,13 @@ async function extractPlayerName(buffer) {
         const { data: { text } } = await worker.recognize(processedBuffer);
         await worker.terminate();
         const match = text.match(/اللاعب[:\s]+([^\n\r]+)/u);
-        return match ? match[1].trim() : "لم يتم العثور";
+        return match ? match[1].trim() : "غير معروف";
     } catch (e) { return "خطأ"; }
 }
 
-async function solveCaptcha(buffer) {
-    const { data, info } = await sharp(buffer).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
-    let minX = info.width, minY = info.height, maxX = 0, maxY = 0, found = false;
-    for (let y = 0; y < info.height; y++) {
-        for (let x = 0; x < info.width; x++) {
-            const idx = (y * info.width + x) * 4;
-            if (data[idx] > 200 && data[idx + 1] > 200 && data[idx + 2] < 100) {
-                minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
-                found = true;
-            }
-        }
-    }
-    if (!found) return null;
-    const margin = 10;
-    const processedBuffer = await sharp(buffer)
-        .extract({ left: minX + margin, top: minY + margin, width: (maxX - minX) - (margin * 2), height: (maxY - minY) - (margin * 2) })
-        .greyscale().normalize().linear(1.5, -0.2).sharpen().toBuffer();
-    const worker = await createWorker('eng+ara');
-    await worker.setParameters({ tessedit_pageseg_mode: '7' });
-    const { data: { text } } = await worker.recognize(processedBuffer);
-    await worker.terminate();
-    return text.replace(/[^a-zA-Z0-9\u0621-\u064A]/g, '').trim();
-}
-
-// --- 6. المعالجة الرئيسية ---
-client.on('groupMessage', async (message) => {
-    if (message.sourceSubscriberId != TARGET_USER_ID) return;
-
-    // أ) معالجة الكابتشا
-    const isTargetChannel = (message.targetGroupId === CHANNEL_TASKS || message.targetGroupId === CHANNEL_ALLIANCE);
-    if (isTargetChannel && message.type === 'text/image_link') {
-        try {
-            const response = await fetch(message.body);
-            const buffer = Buffer.from(await response.arrayBuffer());
-            if (!(await isCaptchaByColor(buffer))) return;
-
-            const name = await extractPlayerName(buffer);
-            if (ALLOWED_PLAYER_NAMES.some(n => name.toLowerCase().includes(n.toLowerCase()))) {
-                const code = await solveCaptcha(buffer);
-                if (code) await client.messaging.sendGroupMessage(message.targetGroupId, `#${code}`);
-            }
-        } catch (err) { console.error("⚠️ خطأ في الكابتشا:", err.message); }
-        return;
-    }
-
-    // ب) معالجة الحالة والمؤقت
-    const body = message.body;
-    const isTimeMachineActive = !body.includes('الجهاز الزمني: غير نشط');
-    const isGuaranteeReady = body.includes('حالة الضمان: جاهز');
-    
-    // تحديث المنطق (لن يغير شيء إلا إذا تغيرت الحالة فعلياً)
-    await updateBotLogic(isTimeMachineActive, isGuaranteeReady);
-
-    // ج) فتح الصناديق
-    if (body.includes('حالة الصناديق')) {
-        const pMatch = body.match(/نقاط الضمان:\s*(\d+)/);
-        if (pMatch && parseInt(pMatch[1]) < 40 && !isFarming) {
-            isFarming = true;
-            await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق فتح ذهبي');
-            await new Promise(r => setTimeout(r, 8000));
-            isFarming = false;
-        }
-    }
-});
-
 client.on('ready', async () => {
-    console.log("🚀 البوت متصل ومستعد.");
-    // أمر البدء عند التشغيل
+    console.log("🚀 البوت متصل ومستعد للعمل.");
     await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق');
-    // بدء المؤقت الافتراضي
     intervalRef = setInterval(performTasks, currentInterval);
 });
 
