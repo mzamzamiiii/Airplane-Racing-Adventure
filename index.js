@@ -13,43 +13,13 @@ const CHANNEL_TASKS = 224;
 const CHANNEL_ALLIANCE = 224;
 const ALLOWED_PLAYERS = ['أوكسجينه', 'أوكسجيته', 'أوكسجيئه'];
 
-// --- متغيرات النظام ---
+// --- متغيرات الحالة (مهمة جداً لمنع التكرار) ---
 let isSystemActive = false; 
 let b = null; 
-let isFarming = false; 
-
-// --- دالة فتح الصناديق ---
-async function handleBoxFarming(gold, silver, bronze, currentPoints, status) {
-    if (isFarming) return;
-    const isReady = status.includes('جاهز');
-    if (isReady && currentPoints >= 40) return;
-
-    isFarming = true;
-    let p = currentPoints;
-    let g = gold, s = silver, b = bronze;
-    let queue = [];
-
-    while (g > 0 || s > 0 || b > 0) {
-        if (isReady && p >= 40) break;
-        if (g > 0) { queue.push('!مد صندوق فتح ذهبي'); g--; p += 4; }
-        else if (s > 0) { queue.push('!مد صندوق فتح فضي'); s--; p += 2; }
-        else if (b > 0) { queue.push('!مد صندوق فتح برونزي'); b--; p += 1; }
-        else break;
-    }
-
-    if (queue.length > 0) {
-        console.log(`[LOG] 🚜 بدء فتح ${queue.length} صندوق.`);
-        for (const cmd of queue) {
-            await client.messaging.sendGroupMessage(CHANNEL_TASKS, cmd);
-            await new Promise(r => setTimeout(r, 10000));
-        }
-    }
-    isFarming = false;
-}
+let lastKnownState = null; // نستخدم هذا لمنع إعادة ضبط المؤقت دون داعٍ
 
 // --- دالة المهام ---
 async function performTasks() {
-    console.log(`[LOG] 🚀 تنفيذ دورة المهام.`);
     try {
         await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد مهام');
         await new Promise(r => setTimeout(r, 2000));
@@ -57,12 +27,18 @@ async function performTasks() {
     } catch (e) { console.error(`[ERROR] ${e.message}`); }
 }
 
-// --- إدارة المؤقت ---
-function manageTimer() {
+// --- إدارة المؤقت (معدلة لمنع التكرار) ---
+function manageTimer(isActive) {
+    // إذا كانت الحالة الحالية هي نفس الحالة السابقة، لا تفعل شيئاً (هذا يحل مشكلة التكرار)
+    if (lastKnownState === isActive) return;
+
+    console.log(`[LOG] ⚙️ تغيير الحالة: ${isActive ? "نشط" : "غير نشط"}. جاري ضبط المؤقت...`);
+    lastKnownState = isActive;
+    
     if (b) clearInterval(b);
-    let intervalMs = isSystemActive ? 64000 : 306000;
-    console.log(`[LOG] ⚙️ تم ضبط المؤقت على ${isSystemActive ? "64" : "306"} ثانية.`);
-    performTasks(); 
+    
+    let intervalMs = isActive ? 64000 : 306000;
+    performTasks(); // تنفيذ فوري عند التغيير
     b = setInterval(performTasks, intervalMs);
 }
 
@@ -134,56 +110,32 @@ client.on('groupMessage', async (message) => {
 
     if (message.sourceSubscriberId !== TARGET_USER_ID) return;
     
-    const body = message.body;
+    // تقسيم الرسالة لأسطر للبحث بدقة
+    const lines = message.body.split('\n');
     
-    // سحب القيم
-    const gMatch = body.match(/ذهبي:\s*(\d+)/);
-    const pMatch = body.match(/نقاط الضمان:\s*(\d+)/);
-    const statusMatch = body.match(/حالة الضمان[:\s]+(.*)/);
+    // البحث عن سطر الجهاز الزمني حصراً
+    const timeLine = lines.find(line => line.includes('الجهاز الزمني'));
     
-    // الحل الجذري للزمن: توقف عند نهاية السطر [^\r\n]+
-    const timeMatch = body.match(/الجهاز الزمني[:\s]+([^\r\n]+)/u);
-
-    // معالجة الصناديق
-    if (gMatch && pMatch && statusMatch) {
-        handleBoxFarming(
-            parseInt(gMatch[1] || 0), 
-            parseInt(body.match(/فضي:\s*(\d+)/)?.[1] || 0), 
-            parseInt(body.match(/برونزي:\s*(\d+)/)?.[1] || 0), 
-            parseInt(pMatch[1] || 0), 
-            statusMatch[1]
-        );
+    if (timeLine) {
+        // إذا كان السطر يحتوي "غير نشط" -> الحالة false
+        const isActive = !timeLine.includes('غير نشط');
+        manageTimer(isActive);
     }
 
-    // معالجة حالة الجهاز الزمني
-    if (timeMatch) {
-        const timeStatus = timeMatch[1].trim(); 
-        const isReady = statusMatch ? statusMatch[1].includes('جاهز') : false;
-        const oldState = isSystemActive;
-
-        // المنطق الدقيق للحالة
-        if (timeStatus.includes('غير نشط')) {
-            isSystemActive = false;
-            // فقط إذا كان جاهزاً والوضع خامل، اطلب الصندوق
-            if (isReady) {
-                await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق ضمان وقت');
-                isSystemActive = true; 
-            }
-        } else if (timeStatus.includes('س') || timeStatus.includes('د')) {
-            isSystemActive = true; 
-        }
-
-        // لا تقم بإعادة ضبط المؤقت إلا إذا تغيرت الحالة فعلياً
-        if (oldState !== isSystemActive) {
-            manageTimer();
+    // منطق الصناديق (بسيط)
+    if (message.body.includes('حالة الضمان')) {
+        const pMatch = message.body.match(/نقاط الضمان:\s*(\d+)/);
+        const sMatch = message.body.includes('جاهز');
+        if (pMatch && sMatch && parseInt(pMatch[1]) < 40) {
+            await client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق ضمان وقت');
         }
     }
 });
 
 client.on('ready', () => {
     console.log("🚀 البوت متصل.");
-    client.messaging.sendGroupMessage(CHANNEL_TASKS, '!مد صندوق');
-    manageTimer();
+    // بدء بحالة افتراضية
+    manageTimer(false); 
 });
 
 client.login(process.env.U_MAIL, process.env.U_PASS);
