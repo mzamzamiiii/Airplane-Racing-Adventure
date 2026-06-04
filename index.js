@@ -8,13 +8,17 @@ const { WOLF } = wolfjs;
 const client = new WOLF();
 
 // --- الإعدادات ---
-const TARGET_USER_ID = 76023604;
+const TARGET_USER_ID = 76023604; // معرفك الشخصي
 const CHANNEL_ID = 224;
 const ALLOWED_PLAYERS = ['أوكسجينه', 'أوكسجيته', 'أوكسجيئه'];
 
+// متغير عالمي للتايمر
 let globalTimer = 0;
 
-// --- الدوال الأساسية للكابتشا (صور) ---
+// دالة مساعدة للفخاخ
+const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// --- الدوال الأساسية للكابتشا ---
 async function isCaptchaByColor(buffer) {
     const { data, info } = await sharp(buffer).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
     let redPixels = 0;
@@ -68,26 +72,89 @@ async function processBoxOpening(g, s, b, currentPoints, isNotReady) {
     };
 
     if (isNotReady) {
+        console.log("⚠️ الحالة 'غير جاهز' موجودة: فتح جميع الصناديق...");
         while (g > 0) { await sendWithDelay('!مد صندوق فتح ذهبي'); g--; }
         while (s > 0) { await sendWithDelay('!مد صندوق فتح فضي'); s--; }
         while (b > 0) { await sendWithDelay('!مد صندوق فتح برونزي'); b--; }
     } else if (currentPoints < 40) {
+        console.log(`✅ الحالة 'جاهز' والنقاط ${currentPoints} أقل من 40: الحساب للوصول لـ 42...`);
         let needed = 42 - currentPoints;
         while (needed > 0) {
-            if (needed >= 4 && g > 0) { await sendWithDelay('!مد صندوق فتح ذهبي'); g--; needed -= 4; }
-            else if (needed >= 2 && s > 0) { await sendWithDelay('!مد صندوق فتح فضي'); s--; needed -= 2; }
-            else if (needed >= 1 && b > 0) { await sendWithDelay('!مد صندوق فتح برونزي'); b--; needed -= 1; }
-            else { break; }
+            if (needed >= 4 && g > 0) {
+                await sendWithDelay('!مد صندوق فتح ذهبي');
+                g--; needed -= 4;
+            } else if (needed >= 2 && s > 0) {
+                await sendWithDelay('!مد صندوق فتح فضي');
+                s--; needed -= 2;
+            } else if (needed >= 1 && b > 0) {
+                await sendWithDelay('!مد صندوق فتح برونزي');
+                b--; needed -= 1;
+            } else { break; }
         }
     }
 }
 
-// --- المعالجة الرئيسية (الكابتشا الصور + النصية) ---
+// --- المعالجة الرئيسية (الكابتشا + الفخاخ) ---
 client.on('groupMessage', async (message) => {
-    if (message.targetGroupId != CHANNEL_ID) return;
+    if (message.targetGroupId !== CHANNEL_ID) return;
+    const content = message.body;
 
-    // 1. معالجة كابتشا الصور
-    if (message.type === 'text/image_link' && message.sourceSubscriberId == TARGET_USER_ID) {
+    // 1. معالجة الفخاخ (إذا كانت رسالة نصية)
+    if (message.type === 'text' && content.includes("تحقق") && content.includes(String(TARGET_USER_ID))) {
+        try {
+            // فخ 1
+            if (content.includes("العلامتين")) {
+                const symMatch = content.match(/العلامتين\s*([^\s\w\u0600-\u06FF])\s*و\s*([^\s\w\u0600-\u06FF])/u);
+                if (symMatch) {
+                    const pattern = new RegExp(`${escapeRegExp(symMatch[1])}(.*?)${escapeRegExp(symMatch[2])}`, 'gu');
+                    const matches = [...content.matchAll(pattern)];
+                    if (matches.length > 0) {
+                        const target = matches.length > 1 ? matches[1] : matches[0];
+                        await client.messaging.sendGroupMessage(CHANNEL_ID, `#${target[1].trim()}`);
+                    }
+                }
+            }
+            // فخ 2
+            else if (content.includes("داخل القوسين")) {
+                const match = content.match(/\((.*?)\)/);
+                if (match) await client.messaging.sendGroupMessage(CHANNEL_ID, `#${match[1].trim()}`);
+            }
+            // فخ 3
+            else if (content.includes("الأقواس المعقوفة")) {
+                const match = content.match(/\{(.*?)\}/);
+                if (match) await client.messaging.sendGroupMessage(CHANNEL_ID, `#${match[1].trim()}`);
+            }
+            // فخ 4
+            else if (content.includes("يمين") || content.includes("يسار")) {
+                const symMatch = content.match(/للعلامة\s*([^\s])/u);
+                const dirMatch = content.match(/(اليمين|يمين|اليسار|يسار)/u);
+                if (symMatch && dirMatch) {
+                    const regex = new RegExp(`([^\\s]+)\\s*${escapeRegExp(symMatch[1])}\\s*([^\\s]+)`, 'gu');
+                    const matches = [...content.matchAll(regex)];
+                    if (matches.length > 0) {
+                        const target = matches.length > 1 ? matches[1] : matches[0];
+                        const answer = dirMatch[0].includes("يمين") ? target[2] : target[1];
+                        await client.messaging.sendGroupMessage(CHANNEL_ID, `#${answer}`);
+                    }
+                }
+            }
+            // فخ 5
+            else if (content.includes("الرمز رقم")) {
+                const indexMatch = content.match(/رقم\s*(\d+)/u);
+                const listMatch = content.match(/⁦(.*?)\s*⁩/u);
+                if (indexMatch && listMatch) {
+                    const items = listMatch[1].split('|').map(s => s.trim());
+                    const index = parseInt(indexMatch[1]) - 1;
+                    if (items[index]) {
+                        await client.messaging.sendGroupMessage(CHANNEL_ID, `#${items[index]}`);
+                    }
+                }
+            }
+        } catch (err) { console.error("⚠️ خطأ في الفخاخ:", err.message); }
+    }
+
+    // 2. معالجة الكابتشا
+    if (message.sourceSubscriberId === TARGET_USER_ID && message.type === 'text/image_link') {
         try {
             const response = await fetch(message.body);
             const buffer = Buffer.from(await response.arrayBuffer());
@@ -97,28 +164,7 @@ client.on('groupMessage', async (message) => {
                 const code = await solveCaptcha(buffer);
                 if (code) await client.messaging.sendGroupMessage(CHANNEL_ID, `#${code}`);
             }
-        } catch (err) { console.error("⚠️ خطأ كابتشا صور:", err.message); }
-    }
-
-    // 2. معالجة كابتشا النص (التحقق السريع)
-    if (message.type === 'text' && message.body.includes("اختبار تحقق سريع")) {
-        try {
-            const playerMatch = message.body.match(/اللاعب:\s*([^\n\r]+)/u);
-            if (playerMatch && ALLOWED_PLAYERS.includes(playerMatch[1].trim())) {
-                const indexMatch = message.body.match(/رقم\s+(\d+)/);
-                const targetIndex = indexMatch ? parseInt(indexMatch[1]) : null;
-                
-                const listLine = message.body.split('\n').find(line => line.includes('|'));
-                if (listLine && targetIndex) {
-                    const cleanLine = listLine.replace(/[⁦⁩]/g, '');
-                    const items = cleanLine.split('|').map(i => i.trim());
-                    const answer = items[targetIndex - 1];
-                    if (answer) {
-                        await client.messaging.sendGroupMessage(CHANNEL_ID, `#${answer}`);
-                    }
-                }
-            }
-        } catch (err) { console.error("⚠️ خطأ كابتشا نص:", err.message); }
+        } catch (err) { console.error("⚠️ خطأ كابتشا:", err.message); }
     }
 });
 
@@ -141,7 +187,9 @@ const sendBoxCommand = () => {
                 const g = boxesMatch ? parseInt(boxesMatch[3]) : 0;
                 const currentPoints = pointsMatch ? parseInt(pointsMatch[1]) : 0;
                 
-                await processBoxOpening(g, s, n, currentPoints, a.includes("غير جاهز"));
+                const isNotReady = a.includes("غير جاهز");
+
+                await processBoxOpening(g, s, n, currentPoints, isNotReady);
 
                 let tempTimer = 0;
                 if (b.includes("غير نشط")) {
@@ -157,7 +205,9 @@ const sendBoxCommand = () => {
                     if (m) tempTimer += parseInt(m[1]) * 60;
                     if (ts) tempTimer += parseInt(ts[1]);
                 }
+                
                 globalTimer = tempTimer;
+                console.log(`⏱ تم التحديث. التايمر:${globalTimer} | النقاط:${currentPoints}`);
                 client.removeListener('groupMessage', responseHandler);
                 resolve();
             }
@@ -176,18 +226,20 @@ const startTaskLoop = async () => {
 
             if (globalTimer > 0) {
                 globalTimer = Math.max(0, globalTimer - 64);
+                console.log(`⏳ التايمر يقل: ${globalTimer} ثانية متبقية.`);
                 await new Promise(resolve => setTimeout(resolve, 64000));
                 if (globalTimer === 0) await sendBoxCommand();
             } else {
+                console.log("⏳ التايمر 0، تحديث...");
                 await new Promise(resolve => setTimeout(resolve, 306000));
                 await sendBoxCommand();
             }
-        } catch (err) { await new Promise(resolve => setTimeout(resolve, 5000)); }
+        } catch (err) { console.error("⚠️ خطأ حلقة:", err.message); await new Promise(resolve => setTimeout(resolve, 5000)); }
     }
 };
 
 client.on('ready', async () => {
-    console.log("🚀 البوت يعمل الآن");
+    console.log("🚀 البوت يعمل الآن (المهام + الكابتشا + الفخاخ)");
     await sendBoxCommand();
     setInterval(sendBoxCommand, 30 * 60 * 1000);
     startTaskLoop();
