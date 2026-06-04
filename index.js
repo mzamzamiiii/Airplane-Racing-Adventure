@@ -106,7 +106,7 @@ client.on('groupMessage', async (message) => {
         const playerName = await extractPlayerName(buffer);
         if (ALLOWED_PLAYERS.some(n => playerName.includes(n))) {
             const code = await solveCaptcha(buffer);
-            if (code) await client.messaging.sendGroupMessage(CHANNEL_ID, `#${code}`);
+            if (code) await client.messaging.sendGroupMessage(CHANNEL_ID, "\u200E#" + code);
         }
     } catch (err) { console.error("⚠️ خطأ كابتشا:", err.message); }
 });
@@ -127,17 +127,17 @@ client.on('groupMessage', async (message) => {
                     const matches = [...content.matchAll(pattern)];
                     if (matches.length > 0) {
                         const target = matches.length > 1 ? matches[1] : matches[0];
-                        await client.messaging.sendGroupMessage(message.targetGroupId, `#${target[1].trim()}`);
+                        await client.messaging.sendGroupMessage(message.targetGroupId, "\u200E#" + target[1].trim());
                     }
                 }
             }
             else if (content.includes("داخل القوسين")) {
                 const match = content.match(/\((.*?)\)/);
-                if (match) await client.messaging.sendGroupMessage(message.targetGroupId, `#${match[1].trim()}`);
+                if (match) await client.messaging.sendGroupMessage(message.targetGroupId, "\u200E#" + match[1].trim());
             }
             else if (content.includes("الأقواس المعقوفة")) {
                 const match = content.match(/\{(.*?)\}/);
-                if (match) await client.messaging.sendGroupMessage(message.targetGroupId, `#${match[1].trim()}`);
+                if (match) await client.messaging.sendGroupMessage(message.targetGroupId, "\u200E#" + match[1].trim());
             }
             else if (content.includes("يمين") || content.includes("يسار")) {
                 const symMatch = content.match(/للعلامة\s*([^\s])/u);
@@ -148,7 +148,7 @@ client.on('groupMessage', async (message) => {
                     if (matches.length > 0) {
                         const target = matches.length > 1 ? matches[1] : matches[0];
                         const answer = dirMatch[0].includes("يمين") ? target[2] : target[1];
-                        await client.messaging.sendGroupMessage(message.targetGroupId, `#${answer}`);
+                        await client.messaging.sendGroupMessage(message.targetGroupId, "\u200E#" + answer);
                     }
                 }
             }
@@ -162,7 +162,7 @@ client.on('groupMessage', async (message) => {
                     
                     if (items[index]) {
                         console.log(`✅ فخ القوائم: العنصر المطلوب هو [${items[index]}]`);
-                        await client.messaging.sendGroupMessage(message.targetGroupId, `#${items[index]}`);
+                        await client.messaging.sendGroupMessage(message.targetGroupId, "\u200E#" + items[index]);
                     }
                 }
             }
