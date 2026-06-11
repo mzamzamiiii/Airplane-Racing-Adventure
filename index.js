@@ -17,8 +17,8 @@ const ACCOUNTS = [
 ];
 
 // ================== CONSTANTS ==================
-const CHANNEL_ID = 569;
-const TARGET_USER_ID = 84520028;
+const CHANNEL_ID = 17614046;
+const TARGET_USER_ID = 76023150;
 
 // ================== HELPERS ==================
 function cleanText(text) {
