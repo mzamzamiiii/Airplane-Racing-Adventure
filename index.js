@@ -8,17 +8,52 @@ const { WOLF } = wolfjs;
 
 // ================== ACCOUNTS ==================
 const ACCOUNTS = [
-    { email: process.env.U_MAIL_1, password: process.env.U_PASS_1, allowedPlayers: ['King'] },
-    { email: process.env.U_MAIL_2, password: process.env.U_PASS_2, allowedPlayers: ['KSA'] },
-    { email: process.env.U_MAIL_3, password: process.env.U_PASS_3, allowedPlayers: ['MKH'] },
-    { email: process.env.U_MAIL_4, password: process.env.U_PASS_4, allowedPlayers: ['SAA'] },
-    { email: process.env.U_MAIL_5, password: process.env.U_PASS_5, allowedPlayers: ['JDH'] },
-    { email: process.env.U_MAIL_6, password: process.env.U_PASS_6, allowedPlayers: ['MLK'] }
+{
+email: process.env.U_MAIL_1,
+password: process.env.U_PASS_1,
+allowedPlayers: [‘King’],
+channelId: 569,
+targetUserId: 84520028
+},
+{
+email: process.env.U_MAIL_2,
+password: process.env.U_PASS_2,
+allowedPlayers: [‘KSA’],
+channelId: 569,
+targetUserId: 84520028
+},
+{
+email: process.env.U_MAIL_3,
+password: process.env.U_PASS_3,
+allowedPlayers: [‘MKH’],
+channelId: 569,
+targetUserId: 84520028
+},
+{
+email: process.env.U_MAIL_4,
+password: process.env.U_PASS_4,
+allowedPlayers: [‘SAA’],
+channelId: 569,
+targetUserId: 84520028
+},
+{
+email: process.env.U_MAIL_5,
+password: process.env.U_PASS_5,
+allowedPlayers: [‘JDH’],
+channelId: 569,
+targetUserId: 84520028
+},
+{
+email: process.env.U_MAIL_6,
+password: process.env.U_PASS_6,
+allowedPlayers: [‘MLK’],
+channelId: 569,
+targetUserId: 84520028
+}
 ];
 
 // ================== CONSTANTS ==================
-const CHANNEL_ID = 569;
-const TARGET_USER_ID = 84520028;
+
 
 // ================== HELPERS ==================
 function cleanText(text) {
@@ -34,6 +69,10 @@ function formatAnswer(text) {
 function createBot(config) {
 
     const client = new WOLF();
+    
+    const CHANNEL_ID = config.channelId;
+const TARGET_USER_ID = config.targetUserId;
+    
     let globalTimer = 0;
 
     // ================= CAPTCHA =================
