@@ -26,15 +26,15 @@ targetUserId: 84520028
 email: process.env.U_MAIL_3,
 password: process.env.U_PASS_3,
 allowedPlayers: ['MKH'],
-channelId: 569,
-targetUserId: 84520028
+channelId: 22271611,
+targetUserId: 84520026
 },
 {
 email: process.env.U_MAIL_4,
 password: process.env.U_PASS_4,
 allowedPlayers: ['SAA'],
-channelId: 569,
-targetUserId: 84520028
+channelId: 22271611,
+targetUserId: 84520026
 },
 {
 email: process.env.U_MAIL_5,
