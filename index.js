@@ -4,8 +4,7 @@ import sharp from 'sharp';
 import { createWorker } from 'tesseract.js';
 import fetch from 'node-fetch';
 
-const { WOLF } = wolf’s;
-
+const { WOLF } = wolfjs;
 // ================== ACCOUNTS ==================
 const ACCOUNTS = [
 {
