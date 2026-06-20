@@ -26,29 +26,29 @@ targetUserId: 84520028
 email: process.env.U_MAIL_3,
 password: process.env.U_PASS_3,
 allowedPlayers: ['MKH'],
-channelId: 330865,
-targetUserId: 84520024
+channelId: 569,
+targetUserId: 84520028
 },
 {
 email: process.env.U_MAIL_4,
 password: process.env.U_PASS_4,
 allowedPlayers: ['SAA'],
-channelId: 330865,
-targetUserId: 84520024
+channelId: 569,
+targetUserId: 84520028
 },
 {
 email: process.env.U_MAIL_5,
 password: process.env.U_PASS_5,
 allowedPlayers: ['JDH'],
-channelId: 330865,
-targetUserId: 84520024
+channelId: 569,
+targetUserId: 84520028
 },
 {
 email: process.env.U_MAIL_6,
 password: process.env.U_PASS_6,
 allowedPlayers: ['MLK'],
-channelId: 330865,
-targetUserId: 84520024
+channelId: 569,
+targetUserId: 84520028
 },
 
 // الحسابات الجديدة
