@@ -88,6 +88,20 @@ password: process.env.U_PASS_11,
 allowedPlayers: ['EMP'],
 channelId: 569,
 targetUserId: 84520028
+},
+{
+email: process.env.U_MAIL_12,
+password: process.env.U_PASS_12,
+allowedPlayers: ['NOR'],
+channelId: 569,
+targetUserId: 84520028
+},
+{
+email: process.env.U_MAIL_13,
+password: process.env.U_PASS_13,
+allowedPlayers: ['Passion'],
+channelId: 569,
+targetUserId: 84520028
 }
 ];
 // ================== CONSTANTS ==================
