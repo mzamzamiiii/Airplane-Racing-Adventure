@@ -1,461 +1,319 @@
-import 'dotenv/config';
+import 'dotenv/config'; // استدعاء ملف البيئة لقراءة الإيميلات وكلمات المرور المشفرة
 import wolfjs from 'wolf.js';
-import sharp from 'sharp';
-import { createWorker } from 'tesseract.js';
-import fetch from 'node-fetch';
 
 const { WOLF } = wolfjs;
 
-// ================== ACCOUNTS ==================
+// =========================================================================
+// ================== 🎮 CONTROL PANEL (لوحة التحكم الرئيسية) ==================
+// =========================================================================
 
+// آيدي الحساب (المرسل أو حساب اللعبة) الذي نراقب رسالته "انتهى السباق"
+const TRACKED_BOT_ID = 80277459; 
+
+// مصفوفة الحسابات الـ 12 مع إمكانية التحكم الكامل بقناة كل دورة وعضوية كل حساب
 const ACCOUNTS = [
-{
-email: process.env.U_MAIL_1,
-password: process.env.U_PASS_1,
-allowedPlayers: ['King'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_2,
-password: process.env.U_PASS_2,
-allowedPlayers: ['KSA'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_3,
-password: process.env.U_PASS_3,
-allowedPlayers: ['MKH'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_4,
-password: process.env.U_PASS_4,
-allowedPlayers: ['SAA'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_5,
-password: process.env.U_PASS_5,
-allowedPlayers: ['JDH'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_6,
-password: process.env.U_PASS_6,
-allowedPlayers: ['MLK'],
-channelId: 569,
-targetUserId: 84520028
-},
-
-// الحسابات الجديدة
-
-{
-email: process.env.U_MAIL_7,
-password: process.env.U_PASS_7,
-allowedPlayers: ['CRN'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_8,
-password: process.env.U_PASS_8,
-allowedPlayers: ['REX'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_9,
-password: process.env.U_PASS_9,
-allowedPlayers: ['LRD'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_10,
-password: process.env.U_PASS_10,
-allowedPlayers: ['ROY'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_11,
-password: process.env.U_PASS_11,
-allowedPlayers: ['EMP'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_12,
-password: process.env.U_PASS_12,
-allowedPlayers: ['NOR'],
-channelId: 569,
-targetUserId: 84520028
-},
-{
-email: process.env.U_MAIL_13,
-password: process.env.U_PASS_13,
-allowedPlayers: ['Passion'],
-channelId: 569,
-targetUserId: 84520028
-}
+    { 
+        email: process.env.U_MAIL_1, password: process.env.U_PASS_1, name: 'King', id: 38770375, index: 1,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_2, password: process.env.U_PASS_2, name: 'KSA', id: 27112980, index: 2,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_3, password: process.env.U_PASS_3, name: 'MKH', id: 1780249, index: 3,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_4, password: process.env.U_PASS_4, name: 'SAA', id: 2251312, index: 4,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_5, password: process.env.U_PASS_5, name: 'JDH', id: 39043364, index: 5,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_6, password: process.env.U_PASS_6, name: 'MLK', id: 34648535, index: 6,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_7, password: process.env.U_PASS_7, name: 'CRN', id: 79996355, index: 7,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_8, password: process.env.U_PASS_8, name: 'REX', id: 34435550, index: 8,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_9, password: process.env.U_PASS_9, name: 'LRD', id: 15859439, index: 9,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_10, password: process.env.U_PASS_10, name: 'ROY', id: 32198971, index: 10,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_11, password: process.env.U_PASS_11, name: 'EMP', id: 39515341, index: 11,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    },
+    { 
+        email: process.env.U_MAIL_12, password: process.env.U_PASS_12, name: 'NOR', id: 2374823, index: 12,
+        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+    }
 ];
-// ================== CONSTANTS ==================
 
-
-// ================== HELPERS ==================
-function cleanText(text) {
-    if (!text) return "";
-    return (text.match(/[a-zA-Z0-9\u0621-\u064A]+/g) || []).join('');
-}
-
-function formatAnswer(text) {
-    return "#" + cleanText(text);
-}
-
-// ================== BOT FACTORY ==================
-function createBot(config) {
-
-    const client = new WOLF();
-    
-    const CHANNEL_ID = config.channelId;
-const TARGET_USER_ID = config.targetUserId;
-    
-    let globalTimer = 0;
-
-    // ================= CAPTCHA =================
-    async function isCaptchaByColor(buffer) {
-        const { data, info } = await sharp(buffer).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
-
-        let red = 0;
-        const total = info.width * info.height;
-
-        for (let i = 0; i < data.length; i += 4) {
-            if (data[i] > 120 && data[i] > data[i + 1] + 30 && data[i] > data[i + 2] + 30) {
-                red++;
-            }
-        }
-
-        return (red / total) * 100 > 40;
+// =========================================================================
+// ================== 🛡️ GLOBAL QUEUE (نظام طابور الأمان المركزي) ==================
+// =========================================================================
+// هذا النظام يمنع الحسابات من إرسال رسائل في نفس اللحظة منعا حاسماً للسبام والتبنيد
+class SafeQueue {
+    constructor() {
+        this.queue = [];
+        this.isProcessing = false;
     }
 
-    async function extractPlayerName(buffer) {
-        try {
-            const processed = await sharp(buffer).greyscale().threshold(160).toBuffer();
-            const worker = await createWorker('ara+eng');
-            const { data: { text } } = await worker.recognize(processed);
-            await worker.terminate();
-
-            const match = text.match(/اللاعب[:\s]+([^\n\r]+)/u);
-            return match ? match[1].trim() : "";
-        } catch {
-            return "";
-        }
-    }
-
-    async function solveCaptcha(buffer) {
-        const { data, info } = await sharp(buffer).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
-
-        let minX = info.width, minY = info.height, maxX = 0, maxY = 0, found = false;
-
-        for (let y = 0; y < info.height; y++) {
-            for (let x = 0; x < info.width; x++) {
-                const i = (y * info.width + x) * 4;
-
-                if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] < 100) {
-                    minX = Math.min(minX, x);
-                    minY = Math.min(minY, y);
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                    found = true;
-                }
-            }
-        }
-
-        if (!found) return null;
-
-        const processed = await sharp(buffer)
-            .extract({ left: minX + 10, top: minY + 10, width: (maxX - minX) - 20, height: (maxY - minY) - 20 })
-            .greyscale()
-            .sharpen()
-            .toBuffer();
-
-        const worker = await createWorker('eng+ara');
-        await worker.setParameters({ tessedit_pageseg_mode: '7' });
-
-        const { data: { text } } = await worker.recognize(processed);
-        await worker.terminate();
-
-        return cleanText(text);
-    }
-
-    // ================== BOX ==================
-    async function processBox(g, s, b, points, notReady) {
-
-        const send = async (cmd) => {
-            await client.messaging.sendGroupMessage(CHANNEL_ID, cmd);
-            await new Promise(r => setTimeout(r, 8000));
-        };
-
-        // غير جاهز => فتح كل الصناديق
-        if (notReady) {
-
-            while (g > 0) {
-                await send('!مد صندوق فتح ذهبي');
-                g--;
-            }
-
-            while (s > 0) {
-                await send('!مد صندوق فتح فضي');
-                s--;
-            }
-
-            while (b > 0) {
-                await send('!مد صندوق فتح برونزي');
-                b--;
-            }
-
-            return;
-        }
-
-        // جاهز => حتى 42
-        let need = Math.max(0, 42 - points);
-
-        while (need > 0) {
-            if (need >= 4 && g > 0) {
-                await send('!مد صندوق فتح ذهبي');
-                g--;
-                need -= 4;
-            }
-            else if (need >= 2 && s > 0) {
-                await send('!مد صندوق فتح فضي');
-                s--;
-                need -= 2;
-            }
-            else if (need >= 1 && b > 0) {
-                await send('!مد صندوق فتح برونزي');
-                b--;
-                need -= 1;
-            }
-            else break;
-        }
-    }
-
-    // ================== BOX CHECK ==================
-    async function sendBoxCommand() {
-
+    // دالة إضافة الرسالة إلى الطابور مع إمكانية تحديد وقت انتظار بعدها (delayAfter)
+    async add(client, channelId, command, delayAfter = 0) {
         return new Promise((resolve) => {
-
-            client.messaging.sendGroupMessage(CHANNEL_ID, '!مد صندوق');
-
-            const handler = async (message) => {
-
-                if (
-                    message.targetGroupId === CHANNEL_ID &&
-                    message.body.startsWith('/me 📦 حالة الصناديق')
-                ) {
-
-                    const body = message.body;
-
-                    const notReady = body.includes("غير جاهز");
-
-                    const boxes = body.match(/برونزي:\s*(\d+)\s*\|\s*فضي:\s*(\d+)\s*\|\s*ذهبي:\s*(\d+)/);
-                    const points = body.match(/نقاط الضمان:\s*(\d+)\/50/);
-
-                    const g = boxes ? +boxes[3] : 0;
-                    const s = boxes ? +boxes[2] : 0;
-                    const b = boxes ? +boxes[1] : 0;
-                    const p = points ? +points[1] : 0;
-
-                    await processBox(g, s, b, p, notReady);
-
-                    const timerLine = body.split('\n').find(l => l.includes('الجهاز الزمني'));
-
-                    let temp = 0;
-
-                    if (timerLine?.includes('موقوف')) {
-
-                        await client.messaging.sendGroupMessage(CHANNEL_ID, '!مد تشغيل');
-
-                    } else if (timerLine && !timerLine.includes("غير نشط")) {
-
-                        const h = timerLine.match(/(\d+)س/);
-                        const m = timerLine.match(/(\d+)د/);
-                        const s = timerLine.match(/(\d+)ث/);
-
-                        if (h) temp += +h[1] * 3600;
-                        if (m) temp += +m[1] * 60;
-                        if (s) temp += +s[1];
-
-                    } else if (!notReady) {
-
-                        await client.messaging.sendGroupMessage(CHANNEL_ID, '!مد صندوق ضمان وقت');
-                        temp = 3 * 3600;
-                    }
-
-                    globalTimer = temp;
-
-                    client.removeListener('groupMessage', handler);
-                    resolve();
-                }
-            };
-
-            client.on('groupMessage', handler);
-
-            setTimeout(() => {
-                client.removeListener('groupMessage', handler);
-                resolve();
-            }, 12000);
+            this.queue.push({ client, channelId, command, delayAfter, resolve });
+            this.process();
         });
     }
 
-    // ================== LOOP ==================
-    async function loop() {
+    // معالجة وإرسال الرسائل بالدور؛ مستحيل تخرج رسالتين معاً
+    async process() {
+        if (this.isProcessing || this.queue.length === 0) return;
+        this.isProcessing = true;
 
+        const { client, channelId, command, delayAfter, resolve } = this.queue.shift();
+
+        try {
+            await client.messaging.sendGroupMessage(channelId, command);
+            if (delayAfter > 0) {
+                await new Promise(r => setTimeout(r, delayAfter)); // دالة الانتظار بين الأوامر
+            }
+        } catch (err) {
+            console.error(`❌ خطأ أثناء إرسال الأمر [${command}] للقناة [${channelId}]:`, err.message);
+        }
+
+        this.isProcessing = false;
+        resolve();
+        this.process(); // الانتقال للأمر التالي بالطابور
+    }
+}
+
+const globalQueue = new SafeQueue();
+
+// =========================================================================
+// ================== 🚦 RACE MANAGER (متحكم نظام دورة السباق !س) ==================
+// =========================================================================
+// هذا الكلاس يدير طابور السباق الذكي، لكي لا يلعب حساب إلا بعد انتهاء الحساب السابق بـ 12 دقيقة واستلام رسالة اللعبة
+class RaceManager {
+    constructor() {
+        this.currentTurnIndex = 1; // يحدد الحساب الذي عليه الدور حالياً (يبدأ بحساب 1)
+        this.lastTurnTime = {}; // يحتفظ بآخر وقت لعب فيه الحساب لضمان شرط الـ 12 دقيقة
+        this.clientsMap = new Map(); // خارطة لربط الحسابات وتفعيلها عند مناداتها
+    }
+
+    // تسجيل الحسابات بداخل نظام إدارة السباق عند بدء التشغيل
+    registerClient(index, config, client, triggerFunc) {
+        this.clientsMap.set(index, { config, client, triggerFunc });
+    }
+
+    // فحص الرسائل القادمة من آيدي اللعبة للتأكد من انتهاء السباق للحساب الحالي
+    async handleRaceEndMessage(body) {
+        if (body.includes("انتهى السباق")) {
+            const currentTurnBot = this.clientsMap.get(this.currentTurnIndex);
+            if (!currentTurnBot) return;
+
+            const expectedId = currentTurnBot.config.id;
+            // التحقق أن الرسالة تنتهي بعضوية الحساب الذي يلعب الآن
+            if (body.endsWith(String(expectedId))) {
+                console.log(`🏁 [السباق] انتهى سباق الحساب ${this.currentTurnIndex} (${currentTurnBot.config.name}). التجهيز للتالي...`);
+                
+                this.lastTurnTime[this.currentTurnIndex] = Date.now(); // تسجيل وقت الانتهاء للحساب الحالي
+
+                // الانتقال للحساب التالي (إذا وصلنا لـ 12 نعود لـ 1)
+                this.currentTurnIndex = this.currentTurnIndex >= 12 ? 1 : this.currentTurnIndex + 1;
+
+                this.triggerNext(); // استدعاء الحساب الجديد ليأخذ دوره
+            }
+        }
+    }
+
+    // تفعيل الحساب الذي عليه الدور بعد التحقق من مرور 12 دقيقة على آخر لعب له
+    async triggerNext() {
+        const nextBot = this.clientsMap.get(this.currentTurnIndex);
+        if (!nextBot) return;
+
+        const lastPlayed = this.lastTurnTime[this.currentTurnIndex] || 0;
+        const diff = Date.now() - lastPlayed;
+        const twelveMinutes = 12 * 60 * 1000; // 12 دقيقة بالملي ثانية
+
+        if (diff >= twelveMinutes) {
+            nextBot.triggerFunc(); // إرسال الأمر فوراً إذا انتهت الـ 12 دقيقة
+        } else {
+            const waitTime = twelveMinutes - diff;
+            console.log(`⏳ [السباق] الحساب ${this.currentTurnIndex} ينتظر ${Math.ceil(waitTime/1000)} ثانية لإكمال شرط الـ 12 دقيقة.`);
+            setTimeout(() => {
+                if (this.currentTurnIndex === nextBot.config.index) {
+                    nextBot.triggerFunc();
+                }
+            }, waitTime);
+        }
+    }
+}
+
+const raceManager = new RaceManager();
+
+// متغيرات عامة لمراقبة هدايا الحسابات (من 2 لـ 12) لمزامنة إيداع خزينة حساب 1
+let giftsSentCount = 0;
+let onGiftsFinished = null;
+
+// =========================================================================
+// ================== 🤖 BOT FACTORY (مصنع إنتاج وتشغيل البوتات) ==================
+// =========================================================================
+function createBot(config, botIndex) {
+    const client = new WOLF();
+    let isAdventure61MinRunning = false; // تتبع حالة دورة 61 دقيقة لإيقاف دورة الـ 3 دقائق مؤقتاً عند تزامنهما
+
+    // -----------------------------------------------------------
+    // 1️⃣ دورة !ط (تتكرر بالكامل كل 8 دقائق)
+    // -----------------------------------------------------------
+    async function runTDuty() {
         while (true) {
             try {
+                // فارق زمني أولي 5 ثوانٍ بين الحسابات عند انطلاق الدورة الكلية
+                await new Promise(r => setTimeout(r, (config.index - 1) * 5000));
 
-               await client.messaging.sendGroupMessage(CHANNEL_ID, '!مد مهام');
-               await new Promise(r => setTimeout(r, 2000));
+                console.log(`🚀 [حساب ${config.index}] إرسال أوامر دورة !ط`);
+                await globalQueue.add(client, config.tChannel, '!ط قصف', 5000); // إرسال قصف ثم انتظار 5 ثوانٍ
 
-               await client.messaging.sendGroupMessage(CHANNEL_ID, '!مد تحالف ايداع كل');
-               await new Promise(r => setTimeout(r, 2000));
+                if (config.index === 1) {
+                    // حساب رقم 1: يرسل هديته المتميزة
+                    await globalQueue.add(client, config.tChannel, '!ط هدية 20300554 2000');
+                    
+                    // يدخل وضع الانتظار حتى تنهي كافة الحسابات من 2 لـ 12 إرسال الهدايا
+                    await new Promise((resolve) => {
+                        giftsSentCount = 0; // تصفير العداد للدورة الجديدة
+                        onGiftsFinished = resolve; // حفظ دالة التنبيه لطلب تفعيلها لاحقاً
+                    });
 
-               await client.messaging.sendGroupMessage(CHANNEL_ID, '!مد صندوق فتح');
-
-                if (globalTimer > 0) {
-                    globalTimer = Math.max(0, globalTimer - 63);
-                    await new Promise(r => setTimeout(r, 63000));
+                    // يرسل الخزينة فور تأكده من انتهاء الحساب الأخير
+                    await globalQueue.add(client, config.tChannel, '!ط خزينة إيداع كل');
                 } else {
-                    await new Promise(r => setTimeout(r, 303000));
-                    await sendBoxCommand();
+                    // الحسابات من 2 لـ 12: ترسل هديتها العادية
+                    await globalQueue.add(client, config.tChannel, '!ط هدية 38770375 2000');
+                    giftsSentCount++;
+                    
+                    // إذا وصل الدور للحساب رقم 12، يقوم بتنبيه حساب 1 فوراً لينفذ أمر الخزينة
+                    if (config.index === 12 && onGiftsFinished) {
+                        onGiftsFinished();
+                    }
                 }
 
-            } catch (e) {
-                console.error(`[${config.email}]`, e.message);
+                // الدورة تعيد نفسها بالكامل بعد 8 دقائق
+                await new Promise(r => setTimeout(r, 8 * 60 * 1000));
+            } catch (err) {
                 await new Promise(r => setTimeout(r, 5000));
             }
         }
     }
 
-    // ================== EVENTS ==================
-    client.on('groupMessage', async (message) => {
-
-    if (
-        message.sourceSubscriberId !== TARGET_USER_ID ||
-        message.targetGroupId !== CHANNEL_ID
-    ) return;
-
-    try {
-
-        console.log("========== NEW MESSAGE ==========");
-        console.log(JSON.stringify(message, null, 2));
-
-        let imageUrl = null;
-
-        if (typeof message.body === "string" && message.body.startsWith("http")) {
-            imageUrl = message.body;
-        }
-
-        if (message.imageUrl) {
-            imageUrl = message.imageUrl;
-        }
-
-        if (message.url) {
-            imageUrl = message.url;
-        }
-
-        if (
-            message.attachment &&
-            typeof message.attachment.url === "string"
-        ) {
-            imageUrl = message.attachment.url;
-        }
-
-        if (!imageUrl) {
-            console.log("❌ No image URL found");
-            return;
-        }
-
-        console.log("✅ Image URL:", imageUrl);
-
-        const res = await fetch(imageUrl);
-
-        if (!res.ok) {
-            console.log("❌ Download failed:", res.status);
-            return;
-        }
-
-        const buffer = Buffer.from(await res.arrayBuffer());
-
-        if (!(await isCaptchaByColor(buffer))) {
-            console.log("❌ Not captcha image");
-            return;
-        }
-
-        const player = await extractPlayerName(buffer);
-
-        console.log("PLAYER =", player);
-
-        if (
-            !config.allowedPlayers.some(
-                p => player.toUpperCase().includes(p.toUpperCase())
-            )
-        ) {
-            console.log("❌ Player not assigned to this account");
-            return;
-        }
-
-        const code = await solveCaptcha(buffer);
-
-        console.log("CODE =", code);
-
-        if (!code) {
-            console.log("❌ OCR failed");
-            return;
-        }
-
-        const answer = formatAnswer(code);
-
-        console.log("✅ SEND =", answer);
-
-        await client.messaging.sendGroupMessage(
-            CHANNEL_ID,
-            answer
-        );
-
-    } catch (e) {
-        console.error(
-            `[${config.email}] captcha error`,
-            e.message
-        );
+    // -----------------------------------------------------------
+    // 2️⃣ دالة إرسال أمر !س جلد خاص (تستدعى عند مجيء دور الحساب بالسباق)
+    // -----------------------------------------------------------
+    async function triggerRaceCommand() {
+        console.log(`🎯 [حساب ${config.index}] حان دوري بالسباق، جاري الجلد...`);
+        await globalQueue.add(client, config.sChannel, `!س جلد خاص ${config.id}`);
     }
-});
 
-    client.on('ready', async () => {
+    // -----------------------------------------------------------
+    // 3️⃣ دورة المغامرة (3 دقائق و 3 ثوانٍ المندمجة مع الـ 61 دقيقة)
+    // -----------------------------------------------------------
+    async function runAdventureDuty() {
+        // فارق زمني أولي 3 ثوانٍ بين كل حساب وحساب لمنع التداخل عند البدء
+        await new Promise(r => setTimeout(r, (config.index - 1) * 3000));
 
-        console.log(`✅ Logged in: ${config.email}`);
+        let last61MinTask = 0;
+        const interval3Min = 3 * 60 * 1000 + 3000; // مؤقت 3 دقائق و 3 ثوانٍ بالملي ثانية
+        const interval61Min = 61 * 60 * 1000;      // مؤقت 61 دقيقة بالملي ثانية
 
-        await sendBoxCommand();
+        while (true) {
+            try {
+                const now = Date.now();
 
-        setInterval(sendBoxCommand, 25 * 60 * 1000);
+                // التحقق هل حان وقت تنفيذ دورة السحب والشراء؟ (كل 61 دقيقة)
+                if (now - last61MinTask >= interval61Min || last61MinTask === 0) {
+                    isAdventure61MinRunning = true; // رفع الراية لإيقاف دورة الـ 3 دقائق مؤقتاً
+                    
+                    console.log(`⚔️ [حساب ${config.index}] تفعيل دورة سحب الذهب والشراء الكبرى (61 دقيقة)`);
+                    await globalQueue.add(client, config.adventureChannel, '!مغامرة تحالف سحب ذهب 750000', 5000); // سحب ثم انتظار 5 ثوانٍ
+                    await globalQueue.add(client, config.adventureChannel, '!مغامرة شراء 10');
+                    
+                    last61MinTask = Date.now();
+                    isAdventure61MinRunning = false; // خفض الراية؛ لتعود دورة الـ 3 دقائق للعمل بسلاسة
+                }
 
-        loop();
+                // دورة الـ 3 دقائق و 3 ثوانٍ (تعمل فقط إذا لم تكن دورة الـ 61 دقيقة قائمة بالهندسة الحالية)
+                if (!isAdventure61MinRunning) {
+                    await globalQueue.add(client, config.adventureChannel, '!مغامرة قتال', 3000); // قتال ثم انتظار 3 ثوانٍ
+                    await globalQueue.add(client, config.adventureChannel, '!مغامرة تحالف ايداع كل');
+                }
+
+                // الانتظار الإلزامي قبل إعادة المحاولة للدورة القادمة
+                await new Promise(r => setTimeout(r, interval3Min));
+
+            } catch (err) {
+                await new Promise(r => setTimeout(r, 4000));
+            }
+        }
+    }
+
+    // -----------------------------------------------------------
+    // 4️⃣ مراقبة أحداث الرسائل المستلمة في القناة لخدمة السباق
+    // -----------------------------------------------------------
+    client.on('groupMessage', async (message) => {
+        // إذا كانت الرسالة من الآيدي المراقب ونوعها نصي
+        if (
+            message.sourceSubscriberId === TRACKED_BOT_ID && 
+            typeof message.body === 'string'
+        ) {
+            await raceManager.handleRaceEndMessage(message.body.trim());
+        }
     });
 
+    // -----------------------------------------------------------
+    // 5️⃣ عند جهوزية الحساب واتصاله بالسيرفر
+    // -----------------------------------------------------------
+    client.on('ready', () => {
+        console.log(`✅ الحساب [${config.name}] متصل بنجاح برقم ترتيب (${config.index})`);
+        
+        // ربط الحساب بالنظام المركزي لإدارة طابور السباق
+        raceManager.registerClient(config.index, config, client, triggerRaceCommand);
+
+        // إطلاق دورة !ط ودورة المغامرة الخاصة بالحساب
+        runTDuty();
+        runAdventureDuty();
+
+        // الحساب رقم 1 يفتتح أول جولة سباق تلقائياً بعد استقرار تشغيل الحسابات بـ 10 ثوانٍ
+        if (config.index === 1) {
+            setTimeout(() => {
+                raceManager.triggerNext();
+            }, 10000);
+        }
+    });
+
+    // تنفيذ عملية تسجيل الدخول للحساب
     client.login(config.email, config.password);
 }
 
-// ================== START MULTI ACCOUNTS ==================
+// =========================================================================
+// ================== 🚀 SYSTEM STARTUP (معالج تشغيل النظام) ==================
+// =========================================================================
+// تشغيل الـ 12 حساباً بجدولة متتابعة (كل حساب يفتح بعد الآخر بـ 4 ثوانٍ) لمنع ضغط الاتصال بالسيرفر
 ACCOUNTS.forEach((acc, i) => {
-
     setTimeout(() => {
-        console.log(`🚀 Starting account ${i + 1}`);
-        createBot(acc);
-    }, i * 35000);
-
+        createBot(acc, i + 1);
+    }, i * 4000); 
 });
