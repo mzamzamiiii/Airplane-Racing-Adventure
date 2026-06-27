@@ -14,51 +14,51 @@ const TRACKED_BOT_ID = 80277459;
 const ACCOUNTS = [
     { 
         email: process.env.U_MAIL_1, password: process.env.U_PASS_1, name: 'King', id: 38770375, index: 1,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 569 
     },
     { 
         email: process.env.U_MAIL_2, password: process.env.U_PASS_2, name: 'KSA', id: 27112980, index: 2,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_3, password: process.env.U_PASS_3, name: 'MKH', id: 1780249, index: 3,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_4, password: process.env.U_PASS_4, name: 'SAA', id: 2251312, index: 4,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445
     },
     { 
         email: process.env.U_MAIL_5, password: process.env.U_PASS_5, name: 'JDH', id: 39043364, index: 5,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_6, password: process.env.U_PASS_6, name: 'MLK', id: 34648535, index: 6,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_7, password: process.env.U_PASS_7, name: 'CRN', id: 79996355, index: 7,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_8, password: process.env.U_PASS_8, name: 'REX', id: 34435550, index: 8,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_9, password: process.env.U_PASS_9, name: 'LRD', id: 15859439, index: 9,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_10, password: process.env.U_PASS_10, name: 'ROY', id: 32198971, index: 10,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_11, password: process.env.U_PASS_11, name: 'EMP', id: 39515341, index: 11,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     },
     { 
         email: process.env.U_MAIL_12, password: process.env.U_PASS_12, name: 'NOR', id: 2374823, index: 12,
-        tChannel: 19287488, sChannel: 19287488, adventureChannel: 19287488 
+        tChannel: 569, sChannel: 569, adventureChannel: 445 
     }
 ];
 
