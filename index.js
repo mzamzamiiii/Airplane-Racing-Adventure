@@ -91,16 +91,17 @@ function createBot(config) {
     });
 
     client.on('groupMessage', async (message) => {
-        if (message.sourceSubscriberId === TRACKED_BOT_ID && message.targetGroupId === config.sChannel) {
+        if (message.sourceSubscriberId === TRACKED_BOT_ID) {
             const body = message.body || "";
             
             if (body.includes("انتهى السباق") || body.includes("The race has finished")) {
                 const prevIndex = config.index === 1 ? 12 : config.index - 1;
                 const prevBot = ACCOUNTS.find(a => a.index === prevIndex);
 
-                if (prevBot && body.includes(String(prevBot.id))) {
+                // التعديل الجوهري: التحقق من أن الرسالة في روم الحساب السابق (prevBot.sChannel)
+                if (prevBot && message.targetGroupId === prevBot.sChannel && body.includes(String(prevBot.id))) {
                     if (config.index !== 1) { 
-                        console.log(`🏁 [${config.name}] تم رصد انتهاء سباق ${prevBot.name}، دوري الآن!`);
+                        console.log(`🏁 [${config.name}] تم رصد انتهاء سباق ${prevBot.name} في الروم ${prevBot.sChannel}، دوري الآن!`);
                         isTurnReady = true;
                         await attemptRace(); 
                     }
@@ -134,14 +135,13 @@ async function runTDuty(client, config) {
     while (true) {
         await globalQueue.add(client, config.tChannel, '!ط قصف');
         
-        // الانتظار المطلوب لمدة 3 ثوانٍ بين القصف والهدية لكل الحسابات
         await new Promise(r => setTimeout(r, 3000)); 
         
         if (config.index === 1) {
             await globalQueue.add(client, config.tChannel, '!ط هدية 20300554 2000');
-            await new Promise(r => setTimeout(r, 3000)); // انتظار 3 ثوانٍ
+            await new Promise(r => setTimeout(r, 3000)); 
             await globalQueue.add(client, config.tChannel, '!ط هجوم 20300554');
-            await new Promise(r => setTimeout(r, 3000)); // انتظار 3 ثوانٍ أخرى
+            await new Promise(r => setTimeout(r, 3000)); 
             await globalQueue.add(client, config.tChannel, '!ط خزينة إيداع كل');
         } else {
             await globalQueue.add(client, config.tChannel, '!ط هدية 38770375 2000');
