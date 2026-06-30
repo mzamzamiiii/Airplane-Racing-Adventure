@@ -45,9 +45,8 @@ class SafeQueue {
         try {
             await client.messaging.sendGroupMessage(channelId, command);
         } catch (err) {
-            console.log(`🔄 محاولة إرسال بديلة لـ [${command}]...`);
             try { await client.messaging.sendGroupMessage(channelId, command); }
-            catch (e) { console.error(`❌ فشل نهائي: ${e.message}`); }
+            catch (e) { /* تجاوز الخطأ تلقائياً */ }
         }
         this.isProcessing = false;
         resolve();
@@ -62,34 +61,65 @@ const globalQueue = new SafeQueue();
 function createBot(config) {
     const client = new WOLF();
 
-    async function triggerRaceCommand() {
-        console.log(`🎯 [${config.name}] بدء السباق...`);
-        await globalQueue.add(client, config.sChannel, `!س جلد خاص ${config.id}`);
+    let hasEnergy = true; 
+    let isTurnReady = (config.index === 1); 
+
+    async function attemptRace() {
+        if (config.index === 1) {
+            if (hasEnergy) {
+                console.log(`🚀 [${config.name}] طاقة كاملة! يطلق دورة سباق جديدة...`);
+                await globalQueue.add(client, config.sChannel, `!س جلد خاص ${config.id}`);
+                hasEnergy = false; 
+            }
+        } else {
+            if (hasEnergy && isTurnReady) {
+                console.log(`✅ [${config.name}] الشروط مكتملة (الطاقة + الدور)! يبدأ السباق...`);
+                await globalQueue.add(client, config.sChannel, `!س جلد خاص ${config.id}`);
+                hasEnergy = false; 
+                isTurnReady = false; 
+            }
+        }
     }
+
+    client.on('privateMessage', async (message) => {
+        const body = message.body || "";
+        if (body.includes("عاد حيوانك لطاقته الكاملة") || body.includes("back to full energy")) {
+            console.log(`⚡ [${config.name}] رسالة خاص: اكتملت الطاقة!`);
+            hasEnergy = true;
+            await attemptRace(); 
+        }
+    });
 
     client.on('groupMessage', async (message) => {
         if (message.sourceSubscriberId === TRACKED_BOT_ID && message.targetGroupId === config.sChannel) {
-            const body = message.body.trim();
+            const body = message.body || "";
             
-            if (body.includes("ما زال السباق جاريًا") && body.includes(String(config.id))) {
-                const match = body.match(/\d+/);
-                const waitSeconds = match ? parseInt(match[0]) : 30;
-                console.log(`⚠️ [${config.name}] انتظار ${waitSeconds} ثانية للسباق...`);
-                setTimeout(() => triggerRaceCommand(), (waitSeconds + 1) * 1000);
+            if (body.includes("انتهى السباق") || body.includes("The race has finished")) {
+                const prevIndex = config.index === 1 ? 12 : config.index - 1;
+                const prevBot = ACCOUNTS.find(a => a.index === prevIndex);
+
+                if (prevBot && body.includes(String(prevBot.id))) {
+                    if (config.index !== 1) { 
+                        console.log(`🏁 [${config.name}] تم رصد انتهاء سباق ${prevBot.name}، دوري الآن!`);
+                        isTurnReady = true;
+                        await attemptRace(); 
+                    }
+                }
             }
         }
     });
 
     client.on('ready', () => {
-        console.log(`✅ ${config.name} متصل.`);
+        console.log(`✅ ${config.name} متصل وجاهز.`);
         
-        // التعديل هنا: استخدام setTimeout بسيط لضمان تحميل البروفايل
         setTimeout(() => {
-            if (client.profile) {
-                client.profile.updateStatus(wolfjs.Status.BUSY).catch(() => {});
-            }
+            if (client.profile) client.profile.updateStatus(wolfjs.Status.BUSY).catch(() => {});
         }, 5000);
-        
+
+        if (config.index === 1) {
+            setTimeout(() => attemptRace(), 8000); 
+        }
+
         runTDuty(client, config);
         runAdventureDuty(client, config);
     });
@@ -97,20 +127,47 @@ function createBot(config) {
     client.login(config.email, config.password);
 }
 
+// =========================================================================
+// ================== 🔄 المهام الجانبية (Background Tasks) ==================
+// =========================================================================
 async function runTDuty(client, config) {
     while (true) {
         await globalQueue.add(client, config.tChannel, '!ط قصف');
+        
+        // الانتظار المطلوب لمدة 3 ثوانٍ بين القصف والهدية لكل الحسابات
+        await new Promise(r => setTimeout(r, 3000)); 
+        
+        if (config.index === 1) {
+            await globalQueue.add(client, config.tChannel, '!ط هدية 20300554 2000');
+            await new Promise(r => setTimeout(r, 3000)); // انتظار 3 ثوانٍ
+            await globalQueue.add(client, config.tChannel, '!ط هجوم 20300554');
+            await new Promise(r => setTimeout(r, 3000)); // انتظار 3 ثوانٍ أخرى
+            await globalQueue.add(client, config.tChannel, '!ط خزينة إيداع كل');
+        } else {
+            await globalQueue.add(client, config.tChannel, '!ط هدية 38770375 2000');
+        }
         await new Promise(r => setTimeout(r, 8 * 60 * 1000));
     }
 }
 
 async function runAdventureDuty(client, config) {
+    let last61MinTask = 0;
     while (true) {
+        if (Date.now() - last61MinTask >= 61 * 60 * 1000 || last61MinTask === 0) {
+            await globalQueue.add(client, config.adventureChannel, '!مغامرة تحالف سحب ذهب 750000');
+            await globalQueue.add(client, config.adventureChannel, '!مغامرة شراء 10');
+            last61MinTask = Date.now();
+        }
         await globalQueue.add(client, config.adventureChannel, '!مغامرة قتال');
-        await new Promise(r => setTimeout(r, 4 * 60 * 1000));
+        await globalQueue.add(client, config.adventureChannel, '!مغامرة تحالف ايداع كل');
+        
+        await new Promise(r => setTimeout(r, 3 * 60 * 1000 + 3000));
     }
 }
 
+// =========================================================================
+// ================== 🚀 التشغيل الموزع بفواصل زمنية ==================
+// =========================================================================
 ACCOUNTS.forEach((acc, i) => {
-    setTimeout(() => createBot(acc), i * 3000);
+    setTimeout(() => createBot(acc), i * 3500); 
 });
