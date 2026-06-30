@@ -71,7 +71,6 @@ function createBot(config) {
         if (message.sourceSubscriberId === TRACKED_BOT_ID && message.targetGroupId === config.sChannel) {
             const body = message.body.trim();
             
-            // نظام استخلاص الوقت الذكي
             if (body.includes("ما زال السباق جاريًا") && body.includes(String(config.id))) {
                 const match = body.match(/\d+/);
                 const waitSeconds = match ? parseInt(match[0]) : 30;
@@ -83,9 +82,14 @@ function createBot(config) {
 
     client.on('ready', () => {
         console.log(`✅ ${config.name} متصل.`);
-        client.profile.updateStatus(wolfjs.Status.BUSY);
         
-        // تشغيل المهام التلقائية
+        // التعديل هنا: استخدام setTimeout بسيط لضمان تحميل البروفايل
+        setTimeout(() => {
+            if (client.profile) {
+                client.profile.updateStatus(wolfjs.Status.BUSY).catch(() => {});
+            }
+        }, 5000);
+        
         runTDuty(client, config);
         runAdventureDuty(client, config);
     });
@@ -93,7 +97,6 @@ function createBot(config) {
     client.login(config.email, config.password);
 }
 
-// المهام
 async function runTDuty(client, config) {
     while (true) {
         await globalQueue.add(client, config.tChannel, '!ط قصف');
@@ -108,9 +111,6 @@ async function runAdventureDuty(client, config) {
     }
 }
 
-// =========================================================================
-// ================== 🚀 التشغيل ==================
-// =========================================================================
 ACCOUNTS.forEach((acc, i) => {
     setTimeout(() => createBot(acc), i * 3000);
 });
