@@ -27,8 +27,8 @@ const ACCOUNTS = [
         id: 27112980, 
         index: 2, 
         tChannel: 569, 
-        sChannel: 569, 
-        adventureChannel: 445 
+        sChannel: 18654218, 
+        adventureChannel: 569 
     },
     { 
         email: process.env.U_MAIL_3, 
@@ -37,7 +37,7 @@ const ACCOUNTS = [
         id: 1780249, 
         index: 3, 
         tChannel: 569, 
-        sChannel: 569, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -47,7 +47,7 @@ const ACCOUNTS = [
         id: 2251312, 
         index: 4, 
         tChannel: 569, 
-        sChannel: 569, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -57,7 +57,7 @@ const ACCOUNTS = [
         id: 39043364, 
         index: 5, 
         tChannel: 569, 
-        sChannel: 569, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -67,7 +67,7 @@ const ACCOUNTS = [
         id: 34648535, 
         index: 6, 
         tChannel: 569, 
-        sChannel: 569, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -76,8 +76,8 @@ const ACCOUNTS = [
         name: 'CRN', 
         id: 79996355, 
         index: 7, 
-        tChannel: 569, 
-        sChannel: 569, 
+        tChannel: 445, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -86,8 +86,8 @@ const ACCOUNTS = [
         name: 'REX', 
         id: 34435550, 
         index: 8, 
-        tChannel: 569, 
-        sChannel: 569, 
+        tChannel: 445, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -96,8 +96,8 @@ const ACCOUNTS = [
         name: 'LRD', 
         id: 15859439, 
         index: 9, 
-        tChannel: 569, 
-        sChannel: 569, 
+        tChannel: 445, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -106,8 +106,8 @@ const ACCOUNTS = [
         name: 'ROY', 
         id: 32198971, 
         index: 10, 
-        tChannel: 569, 
-        sChannel: 569, 
+        tChannel: 445, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -116,8 +116,8 @@ const ACCOUNTS = [
         name: 'EMP', 
         id: 39515341, 
         index: 11, 
-        tChannel: 569, 
-        sChannel: 569, 
+        tChannel: 445, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     },
     { 
@@ -126,8 +126,8 @@ const ACCOUNTS = [
         name: 'NOR', 
         id: 2374823, 
         index: 12, 
-        tChannel: 569, 
-        sChannel: 569, 
+        tChannel: 445, 
+        sChannel: 18654218, 
         adventureChannel: 445 
     }
 ];
